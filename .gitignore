@@ -1,5 +1,6 @@
-idea/
+.idea/
 *.pyc
 .git_github/
 checkpoints/*
+.ipynb_checkpoints/
 
