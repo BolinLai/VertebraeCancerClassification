@@ -1,6 +1,5 @@
 # coding: utf-8
 
-import os
 import torch
 import numpy as np
 from torch import nn
@@ -8,7 +7,6 @@ from torch.nn import functional
 import torch.autograd as autograd
 from torchvision import models
 
-from .pretrained import densenet121, chex_densenet121
 from .BasicModule import BasicModule
 
 START_TAG = "<START>"
@@ -34,14 +32,15 @@ def log_sum_exp(vec):
 
 class BiLSTM_CRF(BasicModule):
 
-    def __init__(self, tag_to_ix, embedding_dim, hidden_dim):
+    def __init__(self, tag_to_ix, embedding_dim, hidden_dim, num_layers):
         super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
         self.tag_to_ix = tag_to_ix
         self.tagset_size = len(tag_to_ix)
 
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2, num_layers=5, bidirectional=True)  # 几层？
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2, num_layers=num_layers, bidirectional=True)  # 几层？
 
         # Maps the output of the LSTM into tag space.
         self.hidden2tag = nn.Linear(hidden_dim, self.tagset_size)
@@ -58,8 +57,8 @@ class BiLSTM_CRF(BasicModule):
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
-        return (autograd.Variable(torch.randn(10, 1, self.hidden_dim // 2)).cuda(),
-                autograd.Variable(torch.randn(10, 1, self.hidden_dim // 2)).cuda())
+        return (autograd.Variable(torch.randn(2 * self.num_layers, 1, self.hidden_dim // 2)).cuda(),
+                autograd.Variable(torch.randn(2 * self.num_layers, 1, self.hidden_dim // 2)).cuda())
 
     def _forward_alg(self, feats):
         # Do the forward algorithm to compute the partition function

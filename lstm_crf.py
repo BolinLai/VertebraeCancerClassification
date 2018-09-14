@@ -7,7 +7,6 @@ import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from torch.nn import functional
 from torchnet import meter
 
 from config import config
@@ -17,6 +16,7 @@ from utils import Visualizer, write_csv, calculate_index
 
 EMBEDDING_DIM = 1024
 HIDDEN_DIM = 20
+NUM_LAYERS = 5
 
 
 def train(**kwargs):
@@ -33,7 +33,7 @@ def train(**kwargs):
     tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
 
     # prepare model
-    model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM)
+    model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS)
 
     if config.load_model_path:
         model.load(config.load_model_path)
@@ -84,8 +84,8 @@ def train(**kwargs):
 
             loss_meter.add(neg_log_likelihood.data[0])
             result = model(feat)
-            for i, j in zip(target, result[1]):
-                train_cm[i][j] += 1
+            for t, r in zip(target, result[1]):
+                train_cm[t][r] += 1
 
             if i % config.print_freq == config.print_freq - 1:
                 vis.plot('loss', loss_meter.value()[0])
@@ -150,6 +150,53 @@ def val(model, dataloader, tag_to_ix):
     val_accuracy = 100. * sum([val_cm[c][c] for c in range(config.num_classes)]) / np.sum(val_cm)
 
     return val_cm, val_accuracy, loss_meter.value()[0]
+
+
+def test(**kwargs):
+    config.parse(kwargs)
+
+    # prepare data
+    test_data = Feature_Dataset(config.data_root, config.test_paths, phase='train')
+    test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
+    print('Test Image:', test_data.__len__())
+
+    tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
+
+    # prepare model
+    model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS)
+
+    if config.load_model_path:
+        model.load(config.load_model_path)
+    if config.use_gpu:
+        model.cuda()
+    model.eval()
+
+    # metric
+    test_cm = [[0] * 3, [0] * 3, [0] * 3]
+
+    # go through the model
+    for i, (features, labels) in tqdm(enumerate(test_dataloader)):
+        # prepare input
+        target = torch.LongTensor([tag_to_ix[t[0]] for t in labels])
+
+        feat = Variable(features.squeeze())
+        # target = Variable(target)
+        if config.use_gpu:
+            feat = feat.cuda()
+            # target = target.cuda()
+
+        result = model(feat)
+
+        for t, r in zip(target, result[1]):
+            test_cm[t][r] += 1
+
+    SE, SP, ACC = calculate_index(test_cm)
+
+    print('confusion matrix:')
+    print(test_cm)
+    print('Sensitivity:', SE)
+    print('Specificity:', SP)
+    print('test accuracy:', ACC)
 
 
 if __name__ == '__main__':
