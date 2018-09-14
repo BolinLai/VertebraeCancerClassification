@@ -97,7 +97,7 @@ def label_based_3class():
             re = 2
         return re
 
-    results_file = 'results/results.csv'
+    results_file = 'results/results_lstmcrf.csv'
 
     with open(results_file, 'r') as f:
         results = f.readlines()[1:]

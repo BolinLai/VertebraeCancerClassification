@@ -323,7 +323,7 @@ def multitask_test_output(**kwargs):
     model.eval()
 
     softmax = functional.softmax
-    misclassified, results, results2 = [], [], []
+    misclassified, results = [], []
 
     # go through the model
     for i, (image, label_1, label_2, label, image_path) in tqdm(enumerate(test_dataloader)):

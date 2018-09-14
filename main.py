@@ -172,7 +172,6 @@ def test(**kwargs):
 
     test_cm = meter.ConfusionMeter(config.num_classes)
     softmax = functional.softmax
-    # misclassified, results, results2 = [], [], []
 
     # go through the model
     for i, (image, label, image_path) in tqdm(enumerate(test_dataloader)):
@@ -223,7 +222,7 @@ def test_output(**kwargs):
     model.eval()
 
     softmax = functional.softmax
-    misclassified, results, results2 = [], [], []
+    misclassified, results = [], []
 
     # go through the model
     for i, (image, label, image_path) in tqdm(enumerate(test_dataloader)):

@@ -25,7 +25,7 @@ def train(**kwargs):
 
     train_data = Feature_Dataset(config.data_root, config.train_paths, phase='train', balance=config.data_balance)
     val_data = Feature_Dataset(config.data_root, config.test_paths, phase='val', balance=config.data_balance)
-    print('Training Images:', train_data.__len__(), 'Validation Images:', val_data.__len__())
+    print('Training Feature Lists:', train_data.__len__(), 'Validation Feature Lists:', val_data.__len__())
 
     train_dataloader = DataLoader(train_data, batch_size=1, shuffle=True, num_workers=config.num_workers)
     val_dataloader = DataLoader(val_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
@@ -61,7 +61,7 @@ def train(**kwargs):
         count = 0
 
         # train
-        for i, (features, labels) in tqdm(enumerate(train_dataloader)):
+        for i, (features, labels, feature_paths) in tqdm(enumerate(train_dataloader)):
             # prepare input
             target = torch.LongTensor([tag_to_ix[t[0]] for t in labels])
 
@@ -131,7 +131,7 @@ def val(model, dataloader, tag_to_ix):
     # criterion = torch.nn.CrossEntropyLoss()
     loss_meter = meter.AverageValueMeter()
 
-    for i, (features, labels) in tqdm(enumerate(dataloader)):
+    for i, (features, labels, feature_paths) in tqdm(enumerate(dataloader)):
         target = torch.LongTensor([tag_to_ix[t[0]] for t in labels])
 
         feat = Variable(features.squeeze())
@@ -156,9 +156,9 @@ def test(**kwargs):
     config.parse(kwargs)
 
     # prepare data
-    test_data = Feature_Dataset(config.data_root, config.test_paths, phase='train')
+    test_data = Feature_Dataset(config.data_root, config.test_paths, phase='test')
     test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
-    print('Test Image:', test_data.__len__())
+    print('Test Feature Lists:', test_data.__len__())
 
     tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
 
@@ -175,7 +175,7 @@ def test(**kwargs):
     test_cm = [[0] * 3, [0] * 3, [0] * 3]
 
     # go through the model
-    for i, (features, labels) in tqdm(enumerate(test_dataloader)):
+    for i, (features, labels, feature_paths) in tqdm(enumerate(test_dataloader)):
         # prepare input
         target = torch.LongTensor([tag_to_ix[t[0]] for t in labels])
 
@@ -185,7 +185,7 @@ def test(**kwargs):
             feat = feat.cuda()
             # target = target.cuda()
 
-        result = model(feat)
+        result = model(feat)  # (score, predict list)
 
         for t, r in zip(target, result[1]):
             test_cm[t][r] += 1
@@ -197,6 +197,60 @@ def test(**kwargs):
     print('Sensitivity:', SE)
     print('Specificity:', SP)
     print('test accuracy:', ACC)
+
+
+def test_output(**kwargs):
+    config.parse(kwargs)
+
+    # prepare data
+    test_data = Feature_Dataset(config.data_root, config.test_paths, phase='test_output')
+    test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
+    print('Test Feature Lists:', test_data.__len__())
+
+    tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
+
+    # prepare model
+    model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS)
+
+    if config.load_model_path:
+        model.load(config.load_model_path)
+    if config.use_gpu:
+        model.cuda()
+    model.eval()
+
+    misclassified, results = [], []
+
+    # go through the model
+    for i, (features, labels, feature_paths) in tqdm(enumerate(test_dataloader)):
+        # prepare input
+        target = []
+        for t in labels:
+            if t[0] != "H":
+                target.append(tag_to_ix[t[0]])
+            else:
+                target.append(3)
+        target = torch.LongTensor(target)
+
+        feat = Variable(features.squeeze())
+        # target = Variable(target)
+        if config.use_gpu:
+            feat = feat.cuda()
+            # target = target.cuda()
+
+        result = model(feat)
+
+        for path, predict, true_label in zip(feature_paths, result[1], target):
+            if int(predict) == 2:
+                predict = 3
+            if int(true_label) == 2:
+                true_label = 3
+            elif int(true_label) == 3:
+                true_label = 2
+            results.append((path[0].split('Data')[1], int(predict), int(true_label), 0, 0, 0))  # 三个0是为了和之前保持一致，填位置
+            if predict != int(true_label):
+                misclassified.append((path[0].split('Data')[1], int(predict), int(true_label), 0, 0, 0))
+    write_csv('results/' + config.results_file, ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], results)
+    write_csv('results/' + config.misclassified_file, ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], misclassified)
 
 
 if __name__ == '__main__':

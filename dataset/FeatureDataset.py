@@ -64,50 +64,48 @@ class Feature_Dataset(object):
 
         feature_lists, label_lists = [], []
         f_tmp, l_tmp = [], []
-        for f, l in zip(self.features, self.labels):
-            if f_tmp and l_tmp:
-                if f.split('/')[6] == f_tmp[-1].split('/')[6] and l != 2:
-                    f_tmp.append(f)
-                    l_tmp.append(l)
-                elif f.split('/')[6] != f_tmp[-1].split('/')[6] and l != 2:
-                    feature_lists.append(f_tmp)
-                    label_lists.append(l_tmp)
-                    f_tmp, l_tmp = [f], [l]
-                else:
-                    if f_tmp and l_tmp:
+
+        if self.phase != 'test_output':  # 剔除label=2
+            for f, l in zip(self.features, self.labels):
+                if f_tmp and l_tmp:
+                    if f.split('/')[6] == f_tmp[-1].split('/')[6] and l != 2:
+                        f_tmp.append(f)
+                        l_tmp.append(l)
+                    elif f.split('/')[6] != f_tmp[-1].split('/')[6] and l != 2:
                         feature_lists.append(f_tmp)
                         label_lists.append(l_tmp)
-                        f_tmp, l_tmp = [], []
+                        f_tmp, l_tmp = [f], [l]
+                    else:
+                        if f_tmp and l_tmp:
+                            feature_lists.append(f_tmp)
+                            label_lists.append(l_tmp)
+                            f_tmp, l_tmp = [], []
+                        else:
+                            pass
+                else:
+                    if l != 2:
+                        f_tmp.append(f)
+                        l_tmp.append(l)
                     else:
                         pass
-            else:
-                if l != 2:
+        else:  # 不剔除label=2
+            for f, l in zip(self.features, self.labels):
+                if f_tmp and l_tmp:
+                    if f.split('/')[6] == f_tmp[-1].split('/')[6]:
+                        f_tmp.append(f)
+                        l_tmp.append(l)
+                    elif f.split('/')[6] != f_tmp[-1].split('/')[6]:
+                        feature_lists.append(f_tmp)
+                        label_lists.append(l_tmp)
+                        f_tmp, l_tmp = [f], [l]
+                    else:
+                        pass
+                else:
                     f_tmp.append(f)
                     l_tmp.append(l)
-                else:
-                    pass
 
         feature_lists.append(f_tmp)
         label_lists.append(l_tmp)
-
-        # 如果不剔除label=2
-        # for f, l in zip(self.features, self.labels):
-        #     if f_tmp and l_tmp:
-        #         if f.split('/')[6] == f_tmp[-1].split('/')[6]:
-        #             f_tmp.append(f)
-        #             l_tmp.append(l)
-        #         elif f.split('/')[6] != f_tmp[-1].split('/')[6]:
-        #             feature_lists.append(f_tmp)
-        #             label_lists.append(l_tmp)
-        #             f_tmp, l_tmp = [f], [l]
-        #         else:
-        #             pass
-        #     else:
-        #         f_tmp.append(f)
-        #         l_tmp.append(l)
-        #
-        # feature_lists.append(f_tmp)
-        # label_lists.append(l_tmp)
 
         self.feature_lists = feature_lists
         self.label_lists = label_lists
@@ -151,6 +149,11 @@ class Feature_Dataset(object):
                 labels.append('Z')
             elif i == 1:
                 labels.append('C')
+            elif i == 2:
+                if self.phase == 'test_output':
+                    labels.append('H')
+                else:
+                    raise ValueError
             elif i == 3:
                 labels.append('R')
             else:
@@ -158,7 +161,7 @@ class Feature_Dataset(object):
 
         # print(features.size())
 
-        return features, labels
+        return features, labels, feature_list
 
     def __len__(self):
         return len(self.feature_lists)
