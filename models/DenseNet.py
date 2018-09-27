@@ -33,13 +33,13 @@ class DenseNet121(BasicModule):
         out = self.classifier(out)
         return out
 
-    def save_feature(self, x, target, image_path):
+    def save_feature(self, x, target, image_path, feature_folder):
         features = self.features(x)
         out = functional.relu(features, inplace=True)
         out = self.adap_avg_pool(out).view(features.size(0), -1)
         out = out.data.cpu().numpy()
         for i in range(out.shape[0]):
-            feature_folder_path = '/DATA5_DB8/data/bllai/Data/' + '/'.join(image_path[i].split('/')[7:-1])
+            feature_folder_path = os.path.join(feature_folder, '/'.join(image_path[i].split('/')[7:-1]))
             if not os.path.exists(feature_folder_path):
                 os.makedirs(feature_folder_path)
             np.save(os.path.join(feature_folder_path, 'feature_'+str(int(target[i]))+'.npy'), out[i])

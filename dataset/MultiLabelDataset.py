@@ -75,13 +75,15 @@ class MultiLabel_Dataset(object):
                     transforms.RandomRotation(30),
                     transforms.ToTensor(),
                     transforms.Lambda(lambda x: torch.cat([x]*3, 0)),
-                    transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD)
+                    transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD),
+                    transforms.Lambda(lambda x: x * torch.Tensor(IMAGENET_STD).unsqueeze(1).unsqueeze(2) + torch.Tensor(IMAGENET_MEAN).unsqueeze(1).unsqueeze(2))
                 ])
             elif phase == 'val' or phase == 'test' or phase == 'test_output':
                 self.trans = transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Lambda(lambda x: torch.cat([x]*3, 0)),
-                    transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD)
+                    transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD),
+                    transforms.Lambda(lambda x: x * torch.Tensor(IMAGENET_STD).unsqueeze(1).unsqueeze(2) + torch.Tensor(IMAGENET_MEAN).unsqueeze(1).unsqueeze(2))
                 ])
             else:
                 raise IndexError

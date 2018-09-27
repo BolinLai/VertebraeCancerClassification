@@ -29,8 +29,8 @@ def multitask_train(**kwargs):
     val_dataloader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
 
     # prepare model
-    # model = MultiTask_DenseNet121(num_classes=2)  # 每一个分支都是2分类
-    model = CheXPre_MultiTask_DenseNet121(num_classes=2)  # 每一个分支都是2分类
+    model = MultiTask_DenseNet121(num_classes=2)  # 每一个分支都是2分类
+    # model = CheXPre_MultiTask_DenseNet121(num_classes=2)  # 每一个分支都是2分类
 
     if config.load_model_path:
         model.load(config.load_model_path)
@@ -238,8 +238,8 @@ def multitask_test(**kwargs):
     print('Test Images:', test_data.__len__())
 
     # prepare model
-    # model = MultiTask_DenseNet121(num_classes=2)
-    model = CheXPre_MultiTask_DenseNet121(num_classes=2)
+    model = MultiTask_DenseNet121(num_classes=2)
+    # model = CheXPre_MultiTask_DenseNet121(num_classes=2)
 
     if config.load_model_path:
         model.load(config.load_model_path)
@@ -313,8 +313,8 @@ def multitask_test_output(**kwargs):
     print('Test Image:', test_data.__len__())
 
     # prepare model
-    # model = MultiTask_DenseNet121(num_classes=2)
-    model = CheXPre_MultiTask_DenseNet121(num_classes=2)
+    model = MultiTask_DenseNet121(num_classes=2)
+    # model = CheXPre_MultiTask_DenseNet121(num_classes=2)
 
     if config.load_model_path:
         model.load(config.load_model_path)

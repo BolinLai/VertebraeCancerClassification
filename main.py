@@ -32,8 +32,8 @@ def train(**kwargs):
 
     # prepare model
     # model = ResNet34(num_classes=4)
-    # model = DenseNet121(num_classes=config.num_classes)
-    model = CheXPre_DenseNet121(num_classes=config.num_classes)
+    model = DenseNet121(num_classes=config.num_classes)
+    # model = CheXPre_DenseNet121(num_classes=config.num_classes)
 
     if config.load_model_path:
         model.load(config.load_model_path)
@@ -161,8 +161,8 @@ def test(**kwargs):
 
     # prepare model
     # model = ResNet34(num_classes=config.num_classes)
-    # model = DenseNet121(num_classes=config.num_classes)
-    model = CheXPre_DenseNet121(num_classes=config.num_classes)
+    model = DenseNet121(num_classes=config.num_classes)
+    # model = CheXPre_DenseNet121(num_classes=config.num_classes)
 
     if config.load_model_path:
         model.load(config.load_model_path)
@@ -212,8 +212,8 @@ def test_output(**kwargs):
 
     # prepare model
     # model = ResNet34(num_classes=config.num_classes)
-    # model = DenseNet121(num_classes=config.num_classes)
-    model = CheXPre_DenseNet121(num_classes=config.num_classes)
+    model = DenseNet121(num_classes=config.num_classes)
+    # model = CheXPre_DenseNet121(num_classes=config.num_classes)
 
     if config.load_model_path:
         model.load(config.load_model_path)
@@ -247,23 +247,21 @@ def test_output(**kwargs):
         # misclassified.extend([(path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2])
         #                       for path, predicted, true_label, prob in zip(image_path, np.argmax(softmax(score, dim=1).data, 1), target, softmax(score, dim=1).data) if predicted != int(true_label)])
 
-    write_csv('results/'+config.results_file, ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], results)
-    write_csv('results/'+config.misclassified_file, ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], misclassified)
+    write_csv(os.path.join('results', config.results_file), ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], results)
+    write_csv(os.path.join('results', config.misclassified_file), ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], misclassified)
 
 
 def save_features(**kwargs):
     config.parse(kwargs)
 
-    # prepare data  # 需要先把BasicDataset里的shuffle和交换label注释掉
-    # train_data = Vertebrae_Dataset(config.data_root, config.train_paths, phase='train', balance=False)
-    # print('Training Images:', train_data.__len__())
-    #
-    # train_dataloader = DataLoader(train_data, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
+    # prepare data  # 需要先把BasicDataset里的shuffle和交换label注释掉，同时trans只进行到归一化，将后面变为ImageNet的分布的部分注释掉，前面图片的翻转旋转注释掉
+    train_data = Vertebrae_Dataset(config.data_root, config.train_paths, phase='train', balance=False)
+    train_dataloader = DataLoader(train_data, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
+    print('Training Images:', train_data.__len__())
 
-    test_data = Vertebrae_Dataset(config.data_root, config.test_paths, phase='test', balance=False)
-    print('Test Images:', test_data.__len__())
-
-    test_dataloader = DataLoader(test_data, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
+    # test_data = Vertebrae_Dataset(config.data_root, config.test_paths, phase='test', balance=False)
+    # test_dataloader = DataLoader(test_data, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
+    # print('Test Images:', test_data.__len__())
 
     # prepare model
     # model = ResNet34(num_classes=4)
@@ -276,15 +274,20 @@ def save_features(**kwargs):
         model.cuda()
     model.eval()
 
-    for image, label, image_path in tqdm(test_dataloader):
+    for image, label, image_path in tqdm(train_dataloader):
         img = Variable(image, volatile=True)
         target = Variable(label)
         if config.use_gpu:
             img = img.cuda()
             target = target.cuda()
 
-        model.save_feature(img, target, image_path)
+        model.save_feature(img, target, image_path, feature_folder='/DATA5_DB8/data/bllai/Data/Features_Horizontal_Vertical')
 
 
 if __name__ == '__main__':
-    fire.Fire()
+    fire.Fire({
+        'train': train,
+        'test': test,
+        'test_output': test_output,
+        'save_features': save_features
+    })

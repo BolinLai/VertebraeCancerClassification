@@ -15,22 +15,28 @@ from models import BiLSTM_CRF, START_TAG, STOP_TAG
 from utils import Visualizer, write_csv, calculate_index
 
 EMBEDDING_DIM = 1024
-HIDDEN_DIM = 20
+HIDDEN_DIM = 50
 NUM_LAYERS = 5
+
+tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
 
 
 def train(**kwargs):
     config.parse(kwargs)
     vis = Visualizer(port=2333, env=config.env)
 
-    train_data = Feature_Dataset(config.data_root, config.train_paths, phase='train', balance=config.data_balance)
-    val_data = Feature_Dataset(config.data_root, config.test_paths, phase='val', balance=config.data_balance)
+    train_roots = [os.path.join(config.data_root, 'Features_Normal'),
+                   os.path.join(config.data_root, 'Features_Horizontal'),
+                   os.path.join(config.data_root, 'Features_Vertical'),
+                   os.path.join(config.data_root, 'Features_Horizontal_Vertical')]
+    val_roots = [os.path.join(config.data_root, 'Features')]
+
+    train_data = Feature_Dataset(train_roots, config.train_paths, phase='train', balance=config.data_balance)
+    val_data = Feature_Dataset(val_roots, config.test_paths, phase='val', balance=config.data_balance)
     print('Training Feature Lists:', train_data.__len__(), 'Validation Feature Lists:', val_data.__len__())
 
     train_dataloader = DataLoader(train_data, batch_size=1, shuffle=True, num_workers=config.num_workers)
     val_dataloader = DataLoader(val_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
-
-    tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
 
     # prepare model
     model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS)
@@ -92,7 +98,7 @@ def train(**kwargs):
                 print('loss', loss_meter.value()[0])
 
         train_accuracy = 100. * sum([train_cm[c][c] for c in range(config.num_classes)]) / np.sum(train_cm)
-        val_cm, val_accuracy, val_loss = val(model, val_dataloader, tag_to_ix)
+        val_cm, val_accuracy, val_loss = val(model, val_dataloader)
 
         if val_accuracy > previous_acc:
             if config.save_model_name:
@@ -115,6 +121,7 @@ def train(**kwargs):
         print(train_cm)
         print('val_cm:')
         print(val_cm)
+        print('Num of NameError:', count)
 
         # update learning rate
         if loss_meter.value()[0] > previous_loss:
@@ -124,7 +131,7 @@ def train(**kwargs):
         previous_loss = loss_meter.value()[0]
 
 
-def val(model, dataloader, tag_to_ix):
+def val(model, dataloader):
     model.eval()
     val_cm = [[0]*3, [0]*3, [0]*3]
 
@@ -152,15 +159,15 @@ def val(model, dataloader, tag_to_ix):
     return val_cm, val_accuracy, loss_meter.value()[0]
 
 
-def test(**kwargs):
+def test(**kwargs):  # 注释掉LSTM_CRF.py里的_get_lstm_features函数里的self.hidden = self.init_hidden()
     config.parse(kwargs)
 
     # prepare data
-    test_data = Feature_Dataset(config.data_root, config.test_paths, phase='test')
+    test_roots = [os.path.join(config.data_root, 'Features_Normal')]
+
+    test_data = Feature_Dataset(test_roots, config.test_paths, phase='test')
     test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
     print('Test Feature Lists:', test_data.__len__())
-
-    tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
 
     # prepare model
     model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS)
@@ -203,11 +210,11 @@ def test_output(**kwargs):
     config.parse(kwargs)
 
     # prepare data
-    test_data = Feature_Dataset(config.data_root, config.test_paths, phase='test_output')
+    test_roots = [os.path.join(config.data_root, 'Features')]
+
+    test_data = Feature_Dataset(test_roots, config.test_paths, phase='test_output')
     test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False, num_workers=config.num_workers)
     print('Test Feature Lists:', test_data.__len__())
-
-    tag_to_ix = {"Z": 0, "C": 1, "R": 2, START_TAG: 3, STOP_TAG: 4}
 
     # prepare model
     model = BiLSTM_CRF(tag_to_ix=tag_to_ix, embedding_dim=EMBEDDING_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS)
@@ -249,9 +256,13 @@ def test_output(**kwargs):
             results.append((path[0].split('Data')[1], int(predict), int(true_label), 0, 0, 0))  # 三个0是为了和之前保持一致，填位置
             if predict != int(true_label):
                 misclassified.append((path[0].split('Data')[1], int(predict), int(true_label), 0, 0, 0))
-    write_csv('results/' + config.results_file, ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], results)
-    write_csv('results/' + config.misclassified_file, ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], misclassified)
+    write_csv(os.path.join('results', config.results_file), ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], results)
+    write_csv(os.path.join('results', config.misclassified_file), ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], misclassified)
 
 
 if __name__ == '__main__':
-    fire.Fire()
+    fire.Fire({
+        'train': train,
+        'test': test,
+        'test_output': test_output,
+    })

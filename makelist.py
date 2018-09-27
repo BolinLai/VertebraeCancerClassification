@@ -1,4 +1,5 @@
 import os
+import fire
 import pandas as pd
 import numpy as np
 
@@ -8,11 +9,11 @@ from config import config
 from utils import write_csv
 
 
-def slice_wise():
+def slice_wise(train_csv="train_path.csv", test_csv="test_path.csv"):
     files = os.listdir(config.data_root)
     train, test = [], []
     for file in files:
-        if os.path.isdir(config.data_root+"/"+file):
+        if os.path.isdir(os.path.join(config.data_root, file)):
             if file in ['1', '2', '3']:
                 train.extend([os.path.join(file, x) for x in sorted(os.listdir(config.data_root+"/"+file))])
             elif file == '4':
@@ -44,26 +45,27 @@ def slice_wise():
         test_label4.append(int(label[3]))
 
     dataframe = pd.DataFrame({'image': train_image, 'label1': train_label1, 'label2': train_label2, 'label3': train_label3, 'label4': train_label4})
-    dataframe.to_csv("train_path.csv", index=False, sep=',')
+    dataframe.to_csv(os.path.join('dataset', train_csv), index=False, sep=',')
     dataframe = pd.DataFrame({'image': test_image, 'label1': test_label1, 'label2': test_label2, 'label3': test_label3, 'label4': test_label4})
-    dataframe.to_csv("test_path.csv", index=False, sep=',')
+    dataframe.to_csv(os.path.join('dataset', test_csv), index=False, sep=',')
 
 
-def feature_slice_wise():
-    files = os.listdir(config.data_root)
+def feature_slice_wise(train_csv="feature_train_path.csv", test_csv="feature_test_path.csv"):
+    files = os.listdir(os.path.join(config.data_root, 'Features'))
     train, test = [], []
     for file in files:
-        if os.path.isdir(config.data_root+"/"+file):
+        if os.path.isdir(os.path.join(config.data_root, file)):
             if file in ['1', '2', '3']:
-                train.extend([os.path.join(file, x) for x in sorted(os.listdir(config.data_root+"/"+file))])
+                train.extend([os.path.join(file, x) for x in sorted(os.listdir(os.path.join(config.data_root, file)))])
             elif file == '4':
-                test.extend([os.path.join(file, x) for x in sorted(os.listdir(config.data_root+"/"+file))])
+                test.extend([os.path.join(file, x) for x in sorted(os.listdir(os.path.join(config.data_root, file)))])
     print(len(train), len(test))
     print(train[0])
 
     train_feature = [os.path.join(x, s, t)
                      for x in tqdm(train)
-                     for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))
+                     for s in
+                     sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))
                      for t in os.listdir(os.path.join(config.data_root, x, s))]
     test_feature = [os.path.join(x, s, t)
                     for x in tqdm(test)
@@ -74,9 +76,9 @@ def feature_slice_wise():
     print(test_feature[34])
 
     dataframe = pd.DataFrame({'feature': train_feature})
-    dataframe.to_csv("feature_train_path.csv", index=False, sep=',')
+    dataframe.to_csv(os.path.join('dataset', train_csv), index=False, sep=',')
     dataframe = pd.DataFrame({'image': test_feature})
-    dataframe.to_csv("feature_test_path.csv", index=False, sep=',')
+    dataframe.to_csv(os.path.join('dataset', test_csv), index=False, sep=',')
 
 
 def lesion_wise(path):
@@ -103,7 +105,7 @@ def lesion_wise(path):
 
 
 if __name__ == '__main__':
-    feature_slice_wise()
-    # slice_wise()
-    # lesion_wise('train_path.csv')
-    # lesion_wise('test_path.csv')
+    fire.Fire({
+        'slice_wise': slice_wise,
+        'feature_slice_wise': feature_slice_wise,
+    })

@@ -19,48 +19,29 @@ VERTEBRAE_STD = [181.5] * 3
 
 
 class Feature_Dataset(object):
-    def __init__(self, root, csv_path, phase, trans=None, balance=True):
+    def __init__(self, roots, csv_path, phase, trans=True, balance=True):
         """
 
-        :param root:
+        :param roots:
         :param trans:
         :param phase:
         """
         with open(csv_path, 'r') as f:
             d = f.readlines()[1:]  # [1:]的作用是去掉表头
-            features, labels = [], []
-            print("Preparing {} data:".format(phase))
+        f.close()
+
+        features, labels = [], []
+        print("Preparing {} data:".format(phase))
+        for root in roots:
             for x in tqdm(d):
                 image_path = os.path.join(root, str(x).strip().split(',')[0])
                 label = int(str(x).strip().split('/')[-1][8])
-                if phase == 'train' or phase == 'val':
-                    # if label in [0, 1, 3]:
-                    #     features.append(image_path)
-                    #     labels.append(label)
-                    features.append(image_path)
-                    labels.append(label)
-                elif phase == 'test':
-                    # if label in [0, 1, 3]:
-                    #     features.append(image_path)
-                    #     labels.append(label)
-                    features.append(image_path)
-                    labels.append(label)
-                elif phase == 'test_output':  # 只用于将每一张test data里的图片的预测结果和label输入到一个文件中
-                    features.append(image_path)
-                    labels.append(label)
-                else:
-                    raise ValueError
-        f.close()
+                features.append(image_path)
+                labels.append(label)
 
         self.features = features
         self.labels = labels
         self.phase = phase
-
-        # a = []
-        # for i in features:
-        #     if i.split('/')[6] not in a:
-        #         a.append(i.split('/')[6])
-        # print('a:', len(a))
 
         feature_lists, label_lists = [], []
         f_tmp, l_tmp = [], []
@@ -68,10 +49,10 @@ class Feature_Dataset(object):
         if self.phase != 'test_output':  # 剔除label=2
             for f, l in zip(self.features, self.labels):
                 if f_tmp and l_tmp:
-                    if f.split('/')[6] == f_tmp[-1].split('/')[6] and l != 2:
+                    if f.split('/')[7] == f_tmp[-1].split('/')[7] and l != 2:
                         f_tmp.append(f)
                         l_tmp.append(l)
-                    elif f.split('/')[6] != f_tmp[-1].split('/')[6] and l != 2:
+                    elif f.split('/')[7] != f_tmp[-1].split('/')[7] and l != 2:
                         feature_lists.append(f_tmp)
                         label_lists.append(l_tmp)
                         f_tmp, l_tmp = [f], [l]
@@ -91,10 +72,10 @@ class Feature_Dataset(object):
         else:  # 不剔除label=2
             for f, l in zip(self.features, self.labels):
                 if f_tmp and l_tmp:
-                    if f.split('/')[6] == f_tmp[-1].split('/')[6]:
+                    if f.split('/')[7] == f_tmp[-1].split('/')[7]:
                         f_tmp.append(f)
                         l_tmp.append(l)
-                    elif f.split('/')[6] != f_tmp[-1].split('/')[6]:
+                    elif f.split('/')[7] != f_tmp[-1].split('/')[7]:
                         feature_lists.append(f_tmp)
                         label_lists.append(l_tmp)
                         f_tmp, l_tmp = [f], [l]
@@ -109,30 +90,6 @@ class Feature_Dataset(object):
 
         self.feature_lists = feature_lists
         self.label_lists = label_lists
-
-        # print(len(self.feature_lists))
-        # print(len(self.label_lists))
-
-        # if trans is None:
-        #     if phase == 'train':
-        #         self.trans = transforms.Compose([
-        #             transforms.RandomHorizontalFlip(),
-        #             transforms.RandomVerticalFlip(),
-        #             transforms.RandomRotation(30),
-        #             transforms.ToTensor(),
-        #             transforms.Lambda(lambda x: torch.cat([x]*3, 0)),
-        #             transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD),
-        #             # transforms.Lambda(lambda x: x * torch.Tensor(IMAGENET_STD).unsqueeze(1).unsqueeze(2) + torch.Tensor(IMAGENET_MEAN).unsqueeze(1).unsqueeze(2))
-        #         ])
-        #     elif phase == 'val' or phase == 'test' or phase == 'test_output':
-        #         self.trans = transforms.Compose([
-        #             transforms.ToTensor(),
-        #             transforms.Lambda(lambda x: torch.cat([x]*3, 0)),
-        #             transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD),
-        #             # transforms.Lambda(lambda x: x * torch.Tensor(IMAGENET_STD).unsqueeze(1).unsqueeze(2) + torch.Tensor(IMAGENET_MEAN).unsqueeze(1).unsqueeze(2))
-        #         ])
-        #     else:
-        #         raise IndexError
 
     def __getitem__(self, index):
         feature_list = self.feature_lists[index]
@@ -179,18 +136,18 @@ class Feature_Dataset(object):
 
 
 if __name__ == '__main__':
-    train_data = Feature_Dataset('/DATA5_DB8/data/bllai/Data', '/DB/rhome/bllai/PyTorchProjects/Vertebrae/feature_train_path.csv', phase='train')
-    val_data = Feature_Dataset('/DATA5_DB8/data/bllai/Data', '/DB/rhome/bllai/PyTorchProjects/Vertebrae/feature_test_path.csv', phase='val')
-
-    # test_data = Vertebrae_Dataset('/DATA/data/hyguan/liuyuan_spine/data_all/patient_image_4', '/DB/rhome/bllai/PyTorchProjects/Vertebrae/test_path.csv', phase='test')
-    # print(train_data.dist())
-    # print(test_data.dist())
-    l = []
+    # train_data = Feature_Dataset(roots=['/DATA5_DB8/data/bllai/Data/Features',
+    #                                     '/DATA5_DB8/data/bllai/Data/Features_Horizontal_Vertical'],
+    #                              csv_path='/DB/rhome/bllai/PyTorchProjects/Vertebrae/dataset/feature_train_path.csv',
+    #                              phase='train')
     # train_dataloader = DataLoader(train_data, batch_size=1, shuffle=True, num_workers=4)  # batch只能为1
+
+    val_data = Feature_Dataset(roots=['/DATA5_DB8/data/bllai/Data/Features'],
+                               csv_path='/DB/rhome/bllai/PyTorchProjects/Vertebrae/dataset/feature_test_path.csv',
+                               phase='val')
     val_dataloader = DataLoader(val_data, batch_size=1, shuffle=True, num_workers=4)  # batch只能为1
 
-    for i, (f, l) in tqdm(enumerate(val_dataloader)):
-        print(f.size())
+    for i, (f, l, fl) in tqdm(enumerate(val_dataloader)):
         pass
         # l.append(img.squeeze())
     # x = torch.cat(l, 0)
