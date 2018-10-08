@@ -9,16 +9,16 @@ from config import config
 from utils import write_csv
 
 
-def slice_wise(train_csv="train_path.csv", test_csv="test_path.csv"):
+def slice_wise(train_csv="sup_train_path.csv", test_csv="sup_test_path.csv"):
     files = os.listdir(config.data_root)
     train, test = [], []
-    for file in files:
+    for file in sorted(files):
         if os.path.isdir(os.path.join(config.data_root, file)):
-            if file in ['1', '2', '3']:
-                train.extend([os.path.join(file, x) for x in sorted(os.listdir(config.data_root+"/"+file))])
-            elif file == '4':
-                test.extend([os.path.join(file, x) for x in sorted(os.listdir(config.data_root+"/"+file))])
-    print(len(train), len(test))
+            if file in ['2', '3', '4', '5', '6', '7', '8', '9']:
+                train.extend([os.path.join(file, x) for x in sorted(os.listdir(os.path.join(config.data_root, file)))])
+            elif file == '1':
+                test.extend([os.path.join(file, x) for x in sorted(os.listdir(os.path.join(config.data_root, file)))])
+    print('Training patients:', len(train), 'Test patients:', len(test))
     print(train[0])
 
     train_image = [os.path.join(x, s, 'image.npy') for x in train for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
@@ -30,14 +30,14 @@ def slice_wise(train_csv="train_path.csv", test_csv="test_path.csv"):
 
     train_label1, train_label2, train_label3, train_label4 = [], [], [], []
     test_label1, test_label2, test_label3, test_label4 = [], [], [], []
-    for i in tqdm(train_label):
+    for i in tqdm(train_label, desc='Making Training CSV'):
         label = np.load(os.path.join(config.data_root, i))
         train_label1.append(int(label[0]))
         train_label2.append(int(label[1]))
         train_label3.append(int(label[2]))
         train_label4.append(int(label[3]))
 
-    for i in tqdm(test_label):
+    for i in tqdm(test_label, desc='Making Test CSV'):
         label = np.load(os.path.join(config.data_root, i))
         test_label1.append(int(label[0]))
         test_label2.append(int(label[1]))
