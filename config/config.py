@@ -5,7 +5,6 @@ import warnings
 class Config(object):
     env = 'Vertebrae'
 
-    # data_root = '/DATA/data/hyguan/liuyuan_spine/data_all/patient_image_4'
     data_root = '/DB/rhome/bllai/Data/VertebraeData'
     train_paths = '/DB/rhome/bllai/PyTorchProjects/Vertebrae/dataset/sup_train_path.csv'
     test_paths = '/DB/rhome/bllai/PyTorchProjects/Vertebrae/dataset/sup_test_path.csv'

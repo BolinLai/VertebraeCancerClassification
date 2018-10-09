@@ -117,6 +117,96 @@ class Vertebrae_Dataset(object):
         return dist
 
 
+# # 脊椎后外侧
+# class Vertebrae_Dataset(object):
+#     def __init__(self, root, csv_path, phase, trans=True, balance=True):
+#         """
+#
+#         :param root:
+#         :param trans:
+#         :param phase:
+#         """
+#         with open(csv_path, 'r') as f:
+#             d = f.readlines()[1:]  # [1:]的作用是去掉表头
+#             if phase == 'train' or phase == 'val':
+#                 random.shuffle(d)
+#             else:
+#                 pass
+#             if balance:
+#                 images, labels = [], []
+#                 normal_count = 0
+#                 threshold = 12000 if phase == 'train' else 1000  # training data 取12000个无病的，validation data 取1000个无病的, test data 取所有的
+#                 for x in tqdm(d, desc="Preparing balanced {} data:".format(phase)):
+#                     image_path = os.path.join(root, str(x).strip().split(',')[0])
+#                     label = int(str(x).strip().split(',')[4])
+#                     if phase == 'train' or phase == 'val':
+#                         if label == 0 and normal_count < threshold:
+#                             images.append(image_path)
+#                             labels.append(label)
+#                             normal_count += 1
+#                         elif label in [1, 2]:
+#                             images.append(image_path)
+#                             labels.append(label)
+#                         else:
+#                             pass
+#                     elif phase == 'test' or phase == 'test_output':
+#                         images.append(image_path)
+#                         labels.append(label)
+#                     else:
+#                         raise ValueError
+#             else:
+#                 images = [os.path.join(root, str(x).strip().split(',')[0]) for x in tqdm(d, desc='Preparing Images')]
+#                 labels = [int(str(x).strip().split(',')[4]) for x in tqdm(d, desc='Preparing Labels')]
+#         self.images = images
+#         self.labels = labels
+#         self.phase = phase
+#
+#         if trans:
+#             if phase == 'train':
+#                 self.trans = transforms.Compose([
+#                     transforms.RandomHorizontalFlip(),
+#                     transforms.RandomVerticalFlip(),
+#                     transforms.RandomRotation(30),
+#                     transforms.ToTensor(),
+#                     transforms.Lambda(lambda x: torch.cat([x]*3, 0)),
+#                     transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD),
+#                     transforms.Lambda(lambda x: x * torch.Tensor(IMAGENET_STD).unsqueeze(1).unsqueeze(2) + torch.Tensor(IMAGENET_MEAN).unsqueeze(1).unsqueeze(2))
+#                 ])
+#             elif phase == 'val' or phase == 'test' or phase == 'test_output':
+#                 self.trans = transforms.Compose([
+#                     transforms.ToTensor(),
+#                     transforms.Lambda(lambda x: torch.cat([x]*3, 0)),
+#                     transforms.Normalize(mean=VERTEBRAE_MEAN, std=VERTEBRAE_STD),
+#                     transforms.Lambda(lambda x: x * torch.Tensor(IMAGENET_STD).unsqueeze(1).unsqueeze(2) + torch.Tensor(IMAGENET_MEAN).unsqueeze(1).unsqueeze(2))
+#                 ])
+#             else:
+#                 raise IndexError
+#         else:
+#             self.trans = None
+#
+#     def __getitem__(self, index):
+#         image_path = self.images[index]
+#         image = Image.fromarray(np.load(image_path))
+#         image = self.trans(image)
+#
+#         label = self.labels[index]
+#
+#         return image, label, image_path
+#
+#     def __len__(self):
+#         return len(self.images)
+#
+#     def dist(self):
+#         dist = {}
+#         for l in tqdm(self.labels, desc="Counting data distribution"):
+#             if str(l) in dist.keys():
+#                 dist[str(l)] += 1
+#             else:
+#                 dist[str(l)] = 1
+#         return dist
+
+
+
 # # 用于保存中间的feature
 # class Vertebrae_Dataset(object):
 #     def __init__(self, root, csv_path, phase, trans=True, balance=True):
@@ -215,12 +305,12 @@ if __name__ == '__main__':
     # print(test_data.dist())
     m = []
     # train_dataloader = DataLoader(train_data, batch_size=32, shuffle=True, num_workers=4)
-    for i, (img, lab, img_path) in tqdm(enumerate(val_data)):
-        # pass
-        m.append(img.squeeze())
-    im = torch.cat(m, 0)
-    print(im.size())
-    print(im.mean(), im.std())
+    # for i, (img, lab, img_path) in tqdm(enumerate(train_data)):
+    #     # pass
+    #     m.append(img.squeeze())
+    # im = torch.cat(m, 0)
+    # print(im.size())
+    # print(im.mean(), im.std())
 
 
     # image = Image.fromarray(np.load('/DATA/data/hyguan/liuyuan_spine/data_all/patient_image_4/1/1695609/1695609_226/image.npy'))

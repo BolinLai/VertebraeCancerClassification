@@ -31,7 +31,7 @@ def train(**kwargs):
     val_dataloader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
 
     # prepare model
-    # model = ResNet34(num_classes=4)
+    # model = ResNet34(num_classes=config.num_classes)
     model = DenseNet121(num_classes=config.num_classes)
     # model = CheXPre_DenseNet121(num_classes=config.num_classes)
 
