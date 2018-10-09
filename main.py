@@ -238,14 +238,9 @@ def test_output(**kwargs):
         for path, predicted, true_label, prob in zip(image_path, np.argmax(softmax(score, dim=1).data, 1), target, softmax(score, dim=1).data):
             if int(predicted) == 2:  # 将预测的成骨型的类别从2变为3，保证csv文件中真实label和预测labe的一致性
                 predicted = 3
-            results.append((path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2]))
+            results.append((path.split('VertebraeData')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2]))
             if predicted != int(true_label):
-                misclassified.append((path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2]))
-
-        # results.extend([(path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2])
-        #                 for path, predicted, true_label, prob in zip(image_path, np.argmax(softmax(score, dim=1).data, 1), target, softmax(score, dim=1).data)])
-        # misclassified.extend([(path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2])
-        #                       for path, predicted, true_label, prob in zip(image_path, np.argmax(softmax(score, dim=1).data, 1), target, softmax(score, dim=1).data) if predicted != int(true_label)])
+                misclassified.append((path.split('VertebraeData')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2]))
 
     write_csv(os.path.join('results', config.results_file), ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], results)
     write_csv(os.path.join('results', config.misclassified_file), ['image_path', 'predict', 'true_label', 'prob_1', 'prob_2', 'prob_3'], misclassified)

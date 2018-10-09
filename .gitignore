@@ -3,4 +3,4 @@
 .git_github/
 checkpoints/*
 .ipynb_checkpoints/
-
+results/

@@ -83,7 +83,7 @@ def predict_lesion_localize(results, classes):
     return lesions
 
 
-def label_based_3class():
+def label_based_3class(results_file):
     """
     以标注为基准定位病灶，计算准确率，混合型不加入统计。
     """
@@ -96,8 +96,6 @@ def label_based_3class():
         else:
             re = 2
         return re
-
-    results_file = 'results/results_lstmcrf.csv'
 
     with open(results_file, 'r') as f:
         results = f.readlines()[1:]
@@ -113,7 +111,7 @@ def label_based_3class():
     for idx in tqdm(lesions):
         lesion_results = results[idx[0]: idx[1]+1]  # 这里要有+1，因为list截取一段不包含最后一个index
 
-        # # 抛弃每段病灶的起始和结束的过度部分
+        # # 抛弃每段病灶的起始和结束的过渡部分
         # length = idx[1]-idx[0]+1
         # if length >= 10:
         #     lesion_results = results[int(idx[0] + length*0.2): int(idx[1]+1 - length*0.2)]
@@ -138,14 +136,16 @@ def label_based_3class():
         result_dict = {'0': 0, '1': 0, '2': 0}
     SE, SP, ACC = calculate_index(cm)
     print(cm[0], '\n', cm[1], '\n', cm[2])
+    print('SE_0:', SE[0])
     print('SE_1:', SE[1])
     print('SE_2:', SE[2])
+    print('SP_0:', SP[0])
     print('SP_1:', SP[1])
     print('SP_2:', SP[2])
     print('ACC:', ACC)
 
 
-def label_based_4class():
+def label_based_4class(results_file):
     """
     以标注为基准定位病灶，计算准确率，统计混合型。
     """
@@ -161,8 +161,6 @@ def label_based_4class():
         else:
             re = 2  # 当成骨和溶骨占比均小于0.7时记为混合型
         return re
-
-    results_file = 'results/results_singleDenseNet.csv'
 
     with open(results_file, 'r') as f:
         results = f.readlines()[1:]
@@ -214,13 +212,10 @@ def label_based_4class():
     print('ACC:', ACC)
 
 
-def predict_based_3class():
+def predict_based_3class(results_file):
     """
     以预测的结果为基准定位病灶，计算准确率，不统计混合型。
     """
-    # results_file = 'results/results_singleDenseNet.csv'
-    # results_file = 'results/results_framediff.csv'
-    results_file = 'results/results.csv'
 
     with open(results_file, 'r') as f:
         results = f.readlines()[1:]
@@ -372,11 +367,10 @@ def predict_based_3class():
     print('ACC:', ACC)
 
 
-def predict_based_4class():
+def predict_based_4class(results_file):
     """
     以预测的结果为基准定位病灶，计算准确率，统计混合型。
     """
-    results_file = 'results/results_singleDenseNet.csv'
 
     with open(results_file, 'r') as f:
         results = f.readlines()[1:]
@@ -512,11 +506,10 @@ def predict_based_4class():
     print('ACC:', ACC)
 
 
-def lesion_detect_IOU():
+def lesion_detect_IOU(results_file):
     """
     以预测的结果为基准定位病灶，计算预测病灶与实际病灶的IOU
     """
-    results_file = 'results/results_singleDenseNet.csv'
 
     with open(results_file, 'r') as f:
         re = f.readlines()[1:]
@@ -599,4 +592,10 @@ def lesion_detect_IOU():
 
 
 if __name__ == '__main__':
-    fire.Fire()
+    fire.Fire({
+        'label_based_3class': label_based_3class,
+        'label_based_4class': label_based_4class,
+        'predict_based_3class': predict_based_3class,
+        'predict_based_4class': predict_based_4class,
+        'lesion_detect_IOU': lesion_detect_IOU
+    })

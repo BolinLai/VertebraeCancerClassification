@@ -18,13 +18,15 @@ def slice_wise(train_csv="sup_train_path.csv", test_csv="sup_test_path.csv"):
                 train.extend([os.path.join(file, x) for x in sorted(os.listdir(os.path.join(config.data_root, file)))])
             elif file == '1':
                 test.extend([os.path.join(file, x) for x in sorted(os.listdir(os.path.join(config.data_root, file)))])
+            else:
+                raise ValueError
     print('Training patients:', len(train), 'Test patients:', len(test))
     print(train[0])
 
-    train_image = [os.path.join(x, s, 'image.npy') for x in train for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
-    train_label = [os.path.join(x, s, 'label.npy') for x in train for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
-    test_image = [os.path.join(x, s, 'image.npy') for x in test for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
-    test_label = [os.path.join(x, s, 'label.npy') for x in test for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
+    train_image = [os.path.join(x, s, 'image.npy') for x in tqdm(train, desc='Training Image') for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
+    train_label = [os.path.join(x, s, 'label.npy') for x in tqdm(train, desc='Training Label') for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
+    test_image = [os.path.join(x, s, 'image.npy') for x in tqdm(test, desc='Test Image') for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
+    test_label = [os.path.join(x, s, 'label.npy') for x in tqdm(test, desc='Test Label') for s in sorted(os.listdir(os.path.join(config.data_root, x)), key=lambda id: int(id.split('_')[1]))]
     print(len(test_image), len(test_label))
     print(test_image[34], test_label[34])
 

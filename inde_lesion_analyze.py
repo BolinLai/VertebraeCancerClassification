@@ -6,6 +6,7 @@ import numpy as np
 from tqdm import tqdm
 from pprint import pprint
 
+# 将lesion_analyze.py中的内容独立出去
 
 def write_csv(file, tag, content):
     """

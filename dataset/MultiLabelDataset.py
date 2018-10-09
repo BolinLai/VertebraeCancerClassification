@@ -14,12 +14,15 @@ from tqdm import tqdm
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
-VERTEBRAE_MEAN = [70.7] * 3
-VERTEBRAE_STD = [181.5] * 3
+# VERTEBRAE_MEAN = [70.7] * 3
+# VERTEBRAE_STD = [181.5] * 3
+
+VERTEBRAE_MEAN = [69.9] * 3
+VERTEBRAE_STD = [182.3] * 3
 
 
 class MultiLabel_Dataset(object):
-    def __init__(self, root, csv_path, phase, trans=None, balance=True):
+    def __init__(self, root, csv_path, phase, trans=True, balance=True):
         """
 
         :param root:
@@ -35,9 +38,9 @@ class MultiLabel_Dataset(object):
             if balance:
                 images, labels = [], []
                 normal_count = 0
-                threshold = 3500 if phase == 'train' else 1230  # training data 取3500个无病的，validation data 取1230个，test data取所有的无病的
-                print("Preparing balanced {} data:".format(phase))
-                for x in tqdm(d):
+                # threshold = 3500 if phase == 'train' else 1230  # training data 取3500个无病的，validation data 取1230个，test data取所有的无病的
+                threshold = 18000 if phase == 'train' else 1200  # training data 取18000个无病的，validation data 取1200个无病的, test data 取所有的
+                for x in tqdm(d, desc="Preparing balanced {} data:".format(phase)):
                     image_path = os.path.join(root, str(x).strip().split(',')[0])
                     label = int(str(x).strip().split(',')[1])
                     if phase == 'train' or phase == 'val':
@@ -61,13 +64,13 @@ class MultiLabel_Dataset(object):
                     else:
                         raise ValueError
             else:
-                images = [os.path.join(root, str(x).strip().split(',')[0]) for x in d]
-                labels = [int(str(x).strip().split(',')[1]) for x in d]
+                images = [os.path.join(root, str(x).strip().split(',')[0]) for x in tqdm(d, desc='Preparing Images')]
+                labels = [int(str(x).strip().split(',')[1]) for x in tqdm(d, desc='Preparing Labels')]
         self.images = images
         self.labels = labels
         self.phase = phase
 
-        if trans is None:
+        if trans:
             if phase == 'train':
                 self.trans = transforms.Compose([
                     transforms.RandomHorizontalFlip(),
@@ -107,8 +110,7 @@ class MultiLabel_Dataset(object):
 
     def dist(self):
         dist = {}
-        print("Counting data distribution")
-        for l in tqdm(self.labels):
+        for l in tqdm(self.labels, desc="Counting data distribution"):
             label = np.load(l)[0]
             if str(int(label)) in dist.keys():
                 dist[str(int(label))] += 1
@@ -123,14 +125,14 @@ if __name__ == '__main__':
     # print(train_data.dist())
     # print(test_data.dist())
 
-    l = []
+    m = []
     train_dataloader = DataLoader(train_data, batch_size=1, shuffle=True, num_workers=4)
     for i, (img, lab1, lab2, lab, img_path) in tqdm(enumerate(train_dataloader)):
         # raise KeyboardInterrupt
-        l.append(img.squeeze())
-    x = torch.cat(l, 0)
-    print(x.size())
-    print(x.mean(), x.std())
+        m.append(img.squeeze())
+    im = torch.cat(m, 0)
+    print(im.size())
+    print(im.mean(), im.std())
 
 
     # image = Image.fromarray(np.load('/DATA/data/hyguan/liuyuan_spine/data_all/patient_image_4/1/1695609/1695609_226/image.npy'))
