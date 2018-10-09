@@ -67,7 +67,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
 
-    fmt = '.2f' if normalize else 'd'
+    fmt = '.4f' if normalize else 'd'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, format(cm[i, j], fmt),
@@ -83,11 +83,11 @@ def plot_confusion_matrix(cm, classes,
 if __name__ == '__main__':
     # cm = np.array([[26112, 2208, 2348], [141, 1028, 31], [141, 27, 808]])
     # cm = np.array([[26339, 1868, 2461], [142, 1017, 41], [176, 18, 782]])
-    cm = np.array([[233, 25, 29], [0, 71, 2], [3, 3, 59]])
+    cm = np.array([[235, 19, 33], [0, 70, 3], [4, 1, 60]])
 
     plot_confusion_matrix(cm=cm,
                           classes=['JianKang', 'ChengGu', 'RongGu'],
                           normalize=True,
-                          savname='../results/Lesion-DenseNetSUP.png')
+                          savname='results/Lesion-MultiDenseNetSUP.png')
 
 
