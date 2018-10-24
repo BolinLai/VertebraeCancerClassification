@@ -14,6 +14,9 @@ resnet34.cuda()
 densenet121 = models.densenet121(pretrained=True)
 densenet121.cuda()
 
+vgg19 = models.vgg19(pretrained=True)
+vgg19.cuda()
+
 
 class CheXDenseNet121(BasicModule):
     def __init__(self, pretrained=False):

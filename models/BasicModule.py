@@ -13,5 +13,5 @@ class BasicModule(torch.nn.Module):
 
     def save(self, name):
         torch.save(self.state_dict(), name)
-        print('Model' + name + ' has been saved!')
+        print('Model ' + name + ' has been saved!')
         return name

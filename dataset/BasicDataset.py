@@ -40,7 +40,7 @@ class Vertebrae_Dataset(object):
                 normal_count = 0
                 # threshold = 3500 if phase == 'train' else 1230  # training data 取3500个无病的，validation data 取1230个无病的, test data 取所有的
                 threshold = 18000 if phase == 'train' else 1200  # training data 取18000个无病的，validation data 取1200个无病的, test data 取所有的
-                for x in tqdm(d, desc="Preparing balanced {} data:".format(phase)):
+                for x in tqdm(d, desc="Preparing balanced {} data".format(phase)):
                     image_path = os.path.join(root, str(x).strip().split(',')[0])
                     label = int(str(x).strip().split(',')[1])
                     if phase == 'train' or phase == 'val':

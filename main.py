@@ -12,7 +12,7 @@ from torchnet import meter
 
 from config import config
 from dataset import Vertebrae_Dataset, FrameDiff_Dataset
-from models import ResNet34, DenseNet121, CheXPre_DenseNet121
+from models import Vgg19, ResNet34, DenseNet121, CheXPre_DenseNet121, MultiResDenseNet121, MultiResVgg19
 from utils import Visualizer, write_csv, calculate_index
 
 
@@ -32,13 +32,18 @@ def train(**kwargs):
 
     # prepare model
     # model = ResNet34(num_classes=config.num_classes)
-    model = DenseNet121(num_classes=config.num_classes)
+    # model = DenseNet121(num_classes=config.num_classes)
     # model = CheXPre_DenseNet121(num_classes=config.num_classes)
+    # model = MultiResDenseNet121(num_classes=config.num_classes)
+    # model = Vgg19(num_classes=config.num_classes)
+    model = MultiResVgg19(num_classes=config.num_classes)
 
     if config.load_model_path:
         model.load(config.load_model_path)
     if config.use_gpu:
         model.cuda()
+    if config.parallel:
+        model = torch.nn.DataParallel(model, device_ids=[x for x in range(config.num_of_gpu)])
 
     model.train()
 
@@ -55,8 +60,12 @@ def train(**kwargs):
     previous_acc = 0
 
     # train
-    if not os.path.exists(os.path.join('checkpoints', model.model_name)):
-        os.mkdir(os.path.join('checkpoints', model.model_name))
+    if config.parallel:
+        if not os.path.exists(os.path.join('checkpoints', model.module.model_name)):
+            os.mkdir(os.path.join('checkpoints', model.module.model_name))
+    else:
+        if not os.path.exists(os.path.join('checkpoints', model.model_name)):
+            os.mkdir(os.path.join('checkpoints', model.model_name))
 
     for epoch in range(config.max_epoch):
         loss_meter.reset()
@@ -92,10 +101,16 @@ def train(**kwargs):
         val_cm, val_accuracy, val_loss = val(model, val_dataloader)
 
         if val_accuracy > previous_acc:
-            if config.save_model_name:
-                model.save(os.path.join('checkpoints', model.model_name, config.save_model_name))
+            if config.parallel:
+                if config.save_model_name:
+                    model.save(os.path.join('checkpoints', model.module.model_name, config.save_model_name))
+                else:
+                    model.save(os.path.join('checkpoints', model.module.model_name, model.module.model_name + '_best_model.pth'))
             else:
-                model.save(os.path.join('checkpoints', model.model_name, model.model_name+'_best_model.pth'))
+                if config.save_model_name:
+                    model.save(os.path.join('checkpoints', model.model_name, config.save_model_name))
+                else:
+                    model.save(os.path.join('checkpoints', model.model_name, model.model_name+'_best_model.pth'))
             previous_acc = val_accuracy
 
         vis.plot_many({'train_accuracy': train_accuracy, 'val_accuracy': val_accuracy})
@@ -161,13 +176,21 @@ def test(**kwargs):
 
     # prepare model
     # model = ResNet34(num_classes=config.num_classes)
-    model = DenseNet121(num_classes=config.num_classes)
+    # model = DenseNet121(num_classes=config.num_classes)
     # model = CheXPre_DenseNet121(num_classes=config.num_classes)
+    # model = MultiResDenseNet121(num_classes=config.num_classes)
+    # model = Vgg19(num_classes=config.num_classes)
+    model = MultiResVgg19(num_classes=config.num_classes)
 
     if config.load_model_path:
         model.load(config.load_model_path)
+        print('Model has been loaded!')
+    else:
+        print("Don't load model")
     if config.use_gpu:
         model.cuda()
+    if config.parallel:
+        model = torch.nn.DataParallel(model, device_ids=[x for x in range(config.num_of_gpu)])
     model.eval()
 
     test_cm = meter.ConfusionMeter(config.num_classes)
@@ -184,12 +207,6 @@ def test(**kwargs):
         score = model(img)
 
         test_cm.add(softmax(score, dim=1).data, target.data)
-
-        # collect results of each slice
-        # for path, predicted, true_label, prob in zip(image_path, np.argmax(softmax(score, dim=1).data, 1), target, softmax(score, dim=1).data):
-        #     results.append((path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2]))
-        #     if predicted != int(true_label):
-        #         misclassified.append((path.split('patient_image_4')[1], int(predicted), int(true_label), prob[0], prob[1], prob[2]))
 
     SE, SP, ACC = calculate_index(test_cm.value())
 

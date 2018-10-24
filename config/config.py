@@ -32,8 +32,8 @@ class Config(object):
     weight_decay = 1e-5
 
     use_gpu = True
-    # parallel = False
-    # num_of_gpu = 2
+    parallel = False
+    num_of_gpu = 2
 
     results_file = 'results.csv'
     misclassified_file = 'misclassified.csv'

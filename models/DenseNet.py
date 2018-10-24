@@ -5,7 +5,6 @@ import torch
 import numpy as np
 from torch import nn
 from torch.nn import functional
-from torchvision import models
 
 from .pretrained import densenet121, chex_densenet121
 from .BasicModule import BasicModule
